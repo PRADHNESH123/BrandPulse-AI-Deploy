@@ -61,7 +61,7 @@ def load_models():
     MODELS = os.path.join(BASE, 'models')
     tfidf    = joblib.load(os.path.join(MODELS, 'tfidf_vectorizer.pkl'))
     lr_model = joblib.load(os.path.join(MODELS, 'logistic_model.pkl'))
-    lstm     = load_model(os.path.join(MODELS, 'lstm_best.h5'))
+    lstm     = load_model(os.path.join(MODELS, 'lstm_best.h5'), compile=False)
     with open(os.path.join(MODELS, 'tokenizer.json')) as f:
         tokenizer = tf.keras.preprocessing.text.tokenizer_from_json(f.read())
     return tfidf, lr_model, lstm, tokenizer
