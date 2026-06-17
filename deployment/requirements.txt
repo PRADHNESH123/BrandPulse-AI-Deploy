@@ -7,4 +7,4 @@ numpy==1.24.3
 plotly
 joblib==1.4.2
 nltk
-h5py
+h5py==3.9.0

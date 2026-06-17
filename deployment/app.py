@@ -8,7 +8,6 @@ import joblib
 import sys
 import random
 from datetime import datetime, timedelta
-from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 
 import re
@@ -61,7 +60,13 @@ def load_models():
     MODELS = os.path.join(BASE, 'models')
     tfidf    = joblib.load(os.path.join(MODELS, 'tfidf_vectorizer.pkl'))
     lr_model = joblib.load(os.path.join(MODELS, 'logistic_model.pkl'))
-    lstm     = load_model(os.path.join(MODELS, 'lstm_best.h5'), compile=False)
+    lstm = tf.keras.models.load_model(
+        os.path.join(MODELS, 'lstm_best.h5'),
+        compile=False,
+        options=tf.saved_model.LoadOptions(
+            experimental_io_device='/job:localhost'
+        )
+    )
     with open(os.path.join(MODELS, 'tokenizer.json')) as f:
         tokenizer = tf.keras.preprocessing.text.tokenizer_from_json(f.read())
     return tfidf, lr_model, lstm, tokenizer
