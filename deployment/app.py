@@ -3,12 +3,10 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
-import tensorflow as tf
 import joblib
 import sys
 import random
 from datetime import datetime, timedelta
-from tensorflow.keras.preprocessing.sequence import pad_sequences
 
 import re
 import os
@@ -60,35 +58,18 @@ def load_models():
     MODELS = os.path.join(BASE, 'models')
     tfidf    = joblib.load(os.path.join(MODELS, 'tfidf_vectorizer.pkl'))
     lr_model = joblib.load(os.path.join(MODELS, 'logistic_model.pkl'))
-    lstm = tf.keras.models.load_model(
-        os.path.join(MODELS, 'lstm_best.h5'),
-        compile=False,
-        options=tf.saved_model.LoadOptions(
-            experimental_io_device='/job:localhost'
-        )
-    )
-    with open(os.path.join(MODELS, 'tokenizer.json')) as f:
-        tokenizer = tf.keras.preprocessing.text.tokenizer_from_json(f.read())
-    return tfidf, lr_model, lstm, tokenizer
+    return tfidf, lr_model
 
-tfidf, lr_model, lstm_model, tokenizer = load_models()
-MAX_LEN = 100
+tfidf, lr_model = load_models()
 
 # ── Prediction function ───────────────────────────────────
-def predict_sentiment(text, model_choice):
+def predict_sentiment(text, model_choice=None):
     cleaned = clean_tweet(text)
     if not cleaned.strip():
         return None, None, cleaned
-    if model_choice == 'Logistic Regression':
-        vec  = tfidf.transform([cleaned])
-        pred = lr_model.predict(vec)[0]
-        conf = max(lr_model.predict_proba(vec)[0]) * 100
-    else:
-        seq  = tokenizer.texts_to_sequences([cleaned])
-        pad  = pad_sequences(seq, maxlen=MAX_LEN, padding='post')
-        prob = lstm_model.predict(pad, verbose=0)[0][0]
-        pred = 1 if prob > 0.5 else 0
-        conf = max(prob, 1 - prob) * 100
+    vec  = tfidf.transform([cleaned])
+    pred = lr_model.predict(vec)[0]
+    conf = max(lr_model.predict_proba(vec)[0]) * 100
     return pred, conf, cleaned
 
 # ── Sidebar ───────────────────────────────────────────────
@@ -96,10 +77,8 @@ st.sidebar.title('📊 BrandPulse AI')
 st.sidebar.markdown('*Twitter Sentiment Analysis*')
 st.sidebar.divider()
 
-model_choice = st.sidebar.selectbox(
-    '🤖 Choose Model',
-    ['Logistic Regression', 'LSTM (BiLSTM)']
-)
+model_choice = 'Logistic Regression'
+st.sidebar.markdown('**🤖 Model:** Logistic Regression')
 
 st.sidebar.divider()
 st.sidebar.markdown('### 📈 Model Performance')
