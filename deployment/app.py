@@ -3,16 +3,31 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
-import tensorflow as tf
 import joblib
 import sys
 import random
 from datetime import datetime, timedelta
-from tensorflow.keras.models import load_model
-from tensorflow.keras.preprocessing.sequence import pad_sequences
 
-sys.path.append('C:/data/BrandPulse-AI')
-from src.preprocessing import clean_tweet
+import re
+import os
+import nltk
+nltk.download('stopwords', quiet=True)
+nltk.download('wordnet', quiet=True)
+from nltk.corpus import stopwords
+from nltk.stem import WordNetLemmatizer
+lemmatizer = WordNetLemmatizer()
+STOP_WORDS = set(stopwords.words('english')) - {'not', 'no', 'nor', 'never'}
+def clean_tweet(text):
+    text = text.lower()
+    text = re.sub(r'http\S+|www\S+|https\S+', '', text)
+    text = re.sub(r'@\w+', '', text)
+    text = re.sub(r'#\w+', '', text)
+    text = re.sub(r'\d+', '', text)
+    text = re.sub(r'[^\w\s]', '', text)
+    text = re.sub(r'\s+', ' ', text).strip()
+    tokens = text.split()
+    tokens = [lemmatizer.lemmatize(w) for w in tokens]
+    return ' '.join([w for w in tokens if w not in STOP_WORDS])
 
 # ── Page config ──────────────────────────────────────────
 st.set_page_config(
@@ -39,31 +54,27 @@ st.markdown("""
 # ── Load models ──────────────────────────────────────────
 @st.cache_resource
 def load_models():
-    tfidf    = joblib.load('C:/data/BrandPulse-AI/models/tfidf_vectorizer.pkl')
-    lr_model = joblib.load('C:/data/BrandPulse-AI/models/logistic_model.pkl')
-    lstm     = load_model('C:/data/BrandPulse-AI/models/lstm_best.h5')
-    with open('C:/data/BrandPulse-AI/models/tokenizer.json') as f:
-        tokenizer = tf.keras.preprocessing.text.tokenizer_from_json(f.read())
-    return tfidf, lr_model, lstm, tokenizer
+    BASE = os.path.dirname(os.path.abspath(__file__))
+    MODELS = os.path.join(BASE, 'models')
+    tfidf    = joblib.load(os.path.join(MODELS, 'tfidf_vectorizer.pkl'))
+    lr_model = joblib.load(os.path.join(MODELS, 'logistic_model.pkl'))
+    nb_model = joblib.load(os.path.join(MODELS, 'nb_model.pkl'))
+    return tfidf, lr_model, nb_model
 
-tfidf, lr_model, lstm_model, tokenizer = load_models()
-MAX_LEN = 100
+tfidf, lr_model, nb_model = load_models()
 
 # ── Prediction function ───────────────────────────────────
-def predict_sentiment(text, model_choice):
+def predict_sentiment(text, model_choice=None):
     cleaned = clean_tweet(text)
     if not cleaned.strip():
         return None, None, cleaned
-    if model_choice == 'Logistic Regression':
-        vec  = tfidf.transform([cleaned])
+    vec  = tfidf.transform([cleaned])
+    if model_choice == 'Navie Bayes':
+         pred = nb_model.predict(vec)[0]
+        conf = max(nb_model.predict_proba(vec)[0]) * 100
+    else:
         pred = lr_model.predict(vec)[0]
         conf = max(lr_model.predict_proba(vec)[0]) * 100
-    else:
-        seq  = tokenizer.texts_to_sequences([cleaned])
-        pad  = pad_sequences(seq, maxlen=MAX_LEN, padding='post')
-        prob = lstm_model.predict(pad, verbose=0)[0][0]
-        pred = 1 if prob > 0.5 else 0
-        conf = max(prob, 1 - prob) * 100
     return pred, conf, cleaned
 
 # ── Sidebar ───────────────────────────────────────────────
@@ -72,16 +83,15 @@ st.sidebar.markdown('*Twitter Sentiment Analysis*')
 st.sidebar.divider()
 
 model_choice = st.sidebar.selectbox(
-    '🤖 Choose Model',
-    ['Logistic Regression', 'LSTM (BiLSTM)']
+    '🤖 Select Model',
+    ['Logistic Regression', 'Naive Bayes']
 )
 
 st.sidebar.divider()
 st.sidebar.markdown('### 📈 Model Performance')
-col1, col2, col3 = st.sidebar.columns(3)
+col1, col2 = st.sidebar.columns(2)
 col1.metric('LR', '80%', 'Fast')
 col2.metric('LSTM', '81%', 'Accurate')
-col3.metric('NB', '77.36%', 'Fastest')
 
 st.sidebar.divider()
 st.sidebar.markdown('### 📁 Project Info')
