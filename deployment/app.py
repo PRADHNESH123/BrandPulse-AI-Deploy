@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import json
 import plotly.express as px
 import plotly.graph_objects as go
 import joblib
@@ -59,22 +60,44 @@ def load_models():
     tfidf    = joblib.load(os.path.join(MODELS, 'tfidf_vectorizer.pkl'))
     lr_model = joblib.load(os.path.join(MODELS, 'logistic_model.pkl'))
     nb_model = joblib.load(os.path.join(MODELS, 'nb_model.pkl'))
-    return tfidf, lr_model, nb_model
+    
+    import tflite_runtime.interpreter as tflite
+    interpreter = tflite.Interpreter(os.path.join(MODELS, 'lstm_model.tflite'))
+    interpreter.allocate_tensors()
+    
+    with open(os.path.join(MODELS, 'tokenizer.json')) as f:
+        from tensorflow.keras.preprocessing.text import tokenizer_from_json
+        tokenizer = tokenizer_from_json(f.read())
+    
+    return tfidf, lr_model, nb_model, interpreter, tokenizer
 
-tfidf, lr_model, nb_model = load_models()
+tfidf, lr_model, nb_model, interpreter, tokenizer = load_models()
+MAX_LEN = 100
 
 # ── Prediction function ───────────────────────────────────
 def predict_sentiment(text, model_choice=None):
     cleaned = clean_tweet(text)
     if not cleaned.strip():
         return None, None, cleaned
-    vec = tfidf.transform([cleaned])
-    if model_choice == 'Naive Bayes':
-        pred = nb_model.predict(vec)[0]
-        conf = max(nb_model.predict_proba(vec)[0]) * 100
+    if model_choice == 'LSTM (BiLSTM)':
+        from tensorflow.keras.preprocessing.sequence import pad_sequences
+        seq = tokenizer.texts_to_sequences([cleaned])
+        pad = pad_sequences(seq, maxlen=MAX_LEN, padding='post')
+        input_details = interpreter.get_input_details()
+        output_details = interpreter.get_output_details()
+        interpreter.set_tensor(input_details[0]['index'], pad.astype(np.float32))
+        interpreter.invoke()
+        prob = interpreter.get_tensor(output_details[0]['index'])[0][0]
+        pred = 1 if prob > 0.5 else 0
+        conf = max(prob, 1 - prob) * 100
     else:
-        pred = lr_model.predict(vec)[0]
-        conf = max(lr_model.predict_proba(vec)[0]) * 100
+        vec = tfidf.transform([cleaned])
+        if model_choice == 'Naive Bayes':
+            pred = nb_model.predict(vec)[0]
+            conf = max(nb_model.predict_proba(vec)[0]) * 100
+        else:
+            pred = lr_model.predict(vec)[0]
+            conf = max(lr_model.predict_proba(vec)[0]) * 100
     return pred, conf, cleaned
 
 # ── Sidebar ───────────────────────────────────────────────
@@ -84,7 +107,7 @@ st.sidebar.divider()
 
 model_choice = st.sidebar.selectbox(
     '🤖 Choose Model',
-    ['Logistic Regression', 'Naive Bayes']
+    ['Logistic Regression', 'Naive Bayes', 'LSTM (BiLSTM)']
 )
 
 st.sidebar.divider()
