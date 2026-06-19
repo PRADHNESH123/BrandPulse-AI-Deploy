@@ -61,8 +61,8 @@ def load_models():
     lr_model = joblib.load(os.path.join(MODELS, 'logistic_model.pkl'))
     nb_model = joblib.load(os.path.join(MODELS, 'nb_model.pkl'))
     
-    import tflite_runtime.interpreter as tflite
-    interpreter = tflite.Interpreter(os.path.join(MODELS, 'lstm_model.tflite'))
+    import tensorflow as tf
+    interpreter = tf.lite.Interpreter(os.path.join(MODELS, 'lstm_model.tflite'))
     interpreter.allocate_tensors()
     
     with open(os.path.join(MODELS, 'tokenizer.json')) as f:
