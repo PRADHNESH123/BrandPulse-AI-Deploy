@@ -293,19 +293,19 @@ with tab2:
             barmode='group'
         )
         st.plotly_chart(fig_topic, use_container_width=True)
-        col1, col2 = st.columns([1, 1])
-    with col1:
-        st.subheader('☁️ Word Cloud')
+
+    st.divider()
 
     positive_words = 'good great love amazing excellent wonderful best happy perfect awesome fantastic thank beautiful brilliant outstanding superb incredible enjoy recommend satisfied delighted'
     negative_words = 'bad terrible awful horrible worst hate disappointed disgusting poor unhappy sad angry frustrated upset annoyed boring useless broken waste awful never again'
 
-    col1, col2 = st.columns(2)
-
     from wordcloud import WordCloud
     import matplotlib.pyplot as plt
 
+    col1, col2 = st.columns(2)
+
     with col1:
+        st.subheader('☁️ Word Cloud')
         wc_pos = WordCloud(
             width=600, height=300,
             background_color='black',
@@ -320,6 +320,7 @@ with tab2:
         st.pyplot(fig_pos)
 
     with col2:
+        st.subheader('') 
         wc_neg = WordCloud(
             width=600, height=300,
             background_color='black',
@@ -332,7 +333,6 @@ with tab2:
         ax.set_title('😞 Negative Words', color='white')
         fig_neg.patch.set_facecolor('black')
         st.pyplot(fig_neg)
-
 # ════════════════════════════════════════════════════════
 # TAB 3 — Trend Analysis
 # ════════════════════════════════════════════════════════
