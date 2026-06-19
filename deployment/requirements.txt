@@ -1,7 +1,10 @@
 streamlit
+keras==2.13.1
 scikit-learn==1.4.2
 pandas
 numpy==1.24.3
 plotly
 joblib==1.4.2
 nltk
+h5py
+wordcloud 
