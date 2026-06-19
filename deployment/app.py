@@ -418,6 +418,38 @@ with tab4:
         st.plotly_chart(fig_comp, use_container_width=True)
 
     st.dataframe(df_comp, use_container_width=True)
+    st.divider()
+    st.subheader('🔢 Confusion Matrices')
+
+    col1, col2 = st.columns(2)
+
+    lr_cm = [[15441, 4369], [4099, 16091]]
+    nb_cm = [[15505, 4305], [4749, 15441]]
+
+    with col1:
+        fig_lr = px.imshow(
+            lr_cm,
+            text_auto=True,
+            color_continuous_scale='Blues',
+            labels=dict(x='Predicted', y='Actual'),
+            x=['Negative', 'Positive'],
+            y=['Negative', 'Positive'],
+            title='Logistic Regression Confusion Matrix'
+        )
+        st.plotly_chart(fig_lr, use_container_width=True)
+
+    with col2:
+        fig_nb = px.imshow(
+            nb_cm,
+            text_auto=True,
+            color_continuous_scale='Greens',
+            labels=dict(x='Predicted', y='Actual'),
+            x=['Negative', 'Positive'],
+            y=['Negative', 'Positive'],
+            title='Naive Bayes Confusion Matrix'
+        )
+        st.plotly_chart(fig_nb, use_container_width=True)
+
 
     st.markdown("""
     ### 🔑 Key Takeaways
