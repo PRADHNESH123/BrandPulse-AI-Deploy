@@ -450,7 +450,6 @@ with tab4:
         )
         st.plotly_chart(fig_nb, use_container_width=True)
 
-
     st.markdown("""
     ### 🔑 Key Takeaways
     | | Logistic Regression | Naive Bayes | LSTM |
