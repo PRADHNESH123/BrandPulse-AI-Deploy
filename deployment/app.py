@@ -293,6 +293,8 @@ with tab2:
             barmode='group'
         )
         st.plotly_chart(fig_topic, use_container_width=True)
+        col1, col2 = st.columns([1, 1])
+    with col1:
         st.subheader('☁️ Word Cloud')
 
     positive_words = 'good great love amazing excellent wonderful best happy perfect awesome fantastic thank beautiful brilliant outstanding superb incredible enjoy recommend satisfied delighted'
