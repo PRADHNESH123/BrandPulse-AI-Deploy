@@ -293,7 +293,7 @@ with tab2:
             barmode='group'
         )
         st.plotly_chart(fig_topic, use_container_width=True)
-        st.header('☁️ Word Cloud')
+        st.subheader('☁️ Word Cloud')
 
     positive_words = 'good great love amazing excellent wonderful best happy perfect awesome fantastic thank beautiful brilliant outstanding superb incredible enjoy recommend satisfied delighted'
     negative_words = 'bad terrible awful horrible worst hate disappointed disgusting poor unhappy sad angry frustrated upset annoyed boring useless broken waste awful never again'
